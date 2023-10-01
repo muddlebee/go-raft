@@ -132,23 +132,23 @@ type RequestVoteReply struct {
 }
 
 // RequestVote RPC.
-func (cm *ConsensusModule) RequestVote(args RequestVoteArgs, reply *RequestVoteReply) error {
+func (cm *ConsensusModule) RequestVote(requestVote RequestVoteArgs, reply *RequestVoteReply) error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 	if cm.state == Dead {
 		return nil
 	}
-	cm.dlog("RequestVote: %+v [currentTerm=%d, votedFor=%d]", args, cm.currentTerm, cm.votedFor)
+	cm.dlog("RequestVote received: %+v [currentTerm=%d, votedFor=%d]", requestVote, cm.currentTerm, cm.votedFor)
 
-	if args.Term > cm.currentTerm {
+	if requestVote.Term > cm.currentTerm {
 		cm.dlog("... term out of date in RequestVote")
-		cm.becomeFollower(args.Term)
+		cm.becomeFollower(requestVote.Term)
 	}
 
-	if cm.currentTerm == args.Term &&
-		(cm.votedFor == -1 || cm.votedFor == args.CandidateId) {
+	if cm.currentTerm == requestVote.Term &&
+		(cm.votedFor == -1 || cm.votedFor == requestVote.CandidateId) {
 		reply.VoteGranted = true
-		cm.votedFor = args.CandidateId
+		cm.votedFor = requestVote.CandidateId
 		cm.electionResetEvent = time.Now()
 	} else {
 		reply.VoteGranted = false
